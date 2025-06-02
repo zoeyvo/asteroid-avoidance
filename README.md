@@ -362,8 +362,8 @@ Open `index.html` in your browser to view the complete project documentation wit
 
 ## 👥 Contributors
 
-**Marina Mata** - [mmbmata@ucdavis.edu](mailto:mmbmata@ucdavis.edu)  
 **Austin (Zoey) Vo** - [ausvo@ucdavis.edu](mailto:ausvo@ucdavis.edu)
+**Marina Mata** - [mmbmata@ucdavis.edu](mailto:mmbmata@ucdavis.edu)  
 
 *UC Davis College of Engineering*  
 *EEC 172 - Embedded Systems Course*
