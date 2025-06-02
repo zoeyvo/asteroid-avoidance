@@ -2,7 +2,7 @@
 
 A real-time embedded systems survival game built on the CC3200 microcontroller, featuring accelerometer-based controls, dynamic difficulty scaling, and cloud-connected high score tracking via AWS IoT.
 
-[![Demo](./assets/demo.jpg)](./assets/demo.mp4)
+[![Demo](./assets/demo.mp4)
 
 ## 📋 Table of Contents
 
