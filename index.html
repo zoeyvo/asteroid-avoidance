@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Final Project Report</title>
+  <link rel="stylesheet" href="assets/github-markdown-light.css">
+  <link rel="stylesheet" href="assets/style-customization.css">
+</head>
+<body>
+  <article class="markdown-body">
+    <header id="title-block-header">
+      <h1 class="title">Final Project Report</h1>
+      <h2>Marina Mata and Zoey (Austin) Vo</h2>
+      <p>College of Engineering, UC Davis</p>
+      <p>Email: <a href="mailto:mmbmata@ucdavis.edu">mmbmata@ucdavis.edu</a>, <a href="mailto:ausvo@ucdavis.edu">ausvo@ucdavis.edu</a></p>
+    </header>
+
+    <nav id="TOC" role="doc-toc">
+      <h2>Table of Contents</h2>
+      <ul>
+        <li><a href="#description">Description</a></li>
+        <li><a href="#design">Design</a>
+          <ul>
+            <li><a href="#high-level-overview">High-Level Overview</a></li>
+            <li><a href="#finite-state-machine">Finite State Machine (FSM) Behavior</a></li>
+            <li><a href="#key-design-principles">Key Design Principles</a></li>
+          </ul>
+        </li>
+        <li><a href="#gameplay-demo">Gameplay Demo</a></li>
+        <li><a href="#implementation">Implementation</a>
+          <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#accelerometer-interface">Accelerometer Interface (I2C)</a></li>
+            <li><a href="#ir-remote-control">IR Remote Control (GPIO Interrupt)</a></li>
+            <li><a href="#oled-display">OLED Display (SPI)</a></li>
+            <li><a href="#aws-iot-integration">AWS IoT Integration (WiFi)</a></li>
+            <li><a href="#game-logic">Game Logic (Software)</a></li>
+            <li><a href="#circuit-diagram">Circuit Diagram</a></li>
+            <li><a href="#summary-of-components">Summary of Major Components</a></li>
+          </ul>
+        </li>
+        <li><a href="#challenges">Challenges</a></li>
+        <li><a href="#future-work">Future Work</a></li>
+        <li><a href="#bill-of-materials">Bill of Materials</a></li>
+      </ul>
+    </nav>
+
+    <h1 id="description">Description</h1>
+    <p>
+      Asteroid Avoider is a fast-paced survival game where players control a spaceship to dodge incoming asteroids while striving for the highest score. The spaceship is maneuvered by tilting the device, using an accelerometer for intuitive left and right control. A dynamic asteroid spawning system keeps the gameplay challenging by varying asteroid size, speed, and frequency—larger and faster asteroids are worth more points.
+    </p>
+    <p>
+      The game integrates with AWS IoT to enhance player engagement. It fetches the current high score from the cloud at the start of each session, motivating players to beat it. If a new high score is achieved, it is automatically uploaded to AWS IoT for leaderboard tracking.
+    </p>
+    <p>
+      An OLED display provides real-time feedback, showing the player’s score, lives remaining, and game status screens. An IR remote control allows players to start the game, resume after a pause, or navigate menus.
+    </p>
+    <p>
+      By combining hardware and software—accelerometer-based controls, IR decoding, OLED graphics, and cloud connectivity—Asteroid Avoider delivers an immersive gaming experience that showcases embedded systems in action.
+    </p>
+
+    <h1 id="design">Design</h1>
+    <h2 id="high-level-overview">High-Level Overview</h2>
+    <p>
+      Asteroid Avoider is structured around a modular, event-driven design that integrates multiple hardware components with a cloud service for an interactive gaming experience. The system is composed of:
+    </p>
+    <ul>
+      <li><strong>Input Devices:</strong>
+        <ul>
+          <li><em>Accelerometer (I2C):</em> for tilt-based spaceship control.</li>
+          <li><em>IR Remote (GPIO Interrupt):</em> for game state navigation (Start, Pause, Restart).</li>
+        </ul>
+      </li>
+      <li><strong>Processing Unit:</strong>
+        <ul>
+          <li><em>CC3200 MCU:</em> manages game logic, state transitions, rendering, and cloud communication.</li>
+        </ul>
+      </li>
+      <li><strong>Output Device:</strong>
+        <ul>
+          <li><em>OLED Display (SPI):</em> shows real-time game graphics and scores.</li>
+        </ul>
+      </li>
+      <li><strong>Cloud Service:</strong>
+        <ul>
+          <li><em>AWS IoT:</em> stores and retrieves the global high score.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h2 id="finite-state-machine">Finite State Machine (FSM) Behavior</h2>
+    <p>
+      The game operates as a finite state machine (FSM) with the following primary states:
+    </p>
+    <ul>
+      <li><strong>Start Screen:</strong> Displays current high score (fetched from AWS IoT) and game instructions.</li>
+      <li><strong>Gameplay:</strong> Player navigates spaceship using the accelerometer to avoid asteroids. Score and lives are tracked. Asteroid speed and frequency increase as the score grows.</li>
+      <li><strong>Game Over:</strong> Triggered when lives reach zero. If a new high score is achieved, it is uploaded to AWS IoT.</li>
+      <li><strong>Restart:</strong> Pressing any button on the IR remote returns to the Start Screen.</li>
+    </ul>
+
+    <h2 id="key-design-principles">Key Design Principles</h2>
+    <ul>
+      <li>Modular design for easy integration of hardware and software components.</li>
+      <li>Event-driven input handling via interrupts and sensor polling.</li>
+      <li>Cloud-enhanced gameplay using AWS IoT for high score persistence.</li>
+      <li>Efficient graphics rendering to maintain ~45 FPS on an embedded system.</li>
+    </ul>
+
+    <h1 id="gameplay-demo">Gameplay Demo</h1>
+    <div style="text-align:center; margin-top:20px;">
+      <video controls style="width:80%; height:auto;">
+        <source src="assets/demo.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      <br>
+      <img src="assets/demo.jpg" alt="Gameplay Screenshot" style="width:60%; margin-top:16px; border:1px solid #ccc; border-radius:8px;">
+      <p>Figure: Gameplay demo showcasing the Asteroid Avoider project in action.</p>
+    </div>
+
+    <h1 id="implementation">Implementation</h1>
+    <h2 id="overview">Overview</h2>
+    <p>
+      The Asteroid Avoider project integrates multiple hardware components—an accelerometer, IR remote, OLED display, and the CC3200 microcontroller—into a cohesive system using both hardware wiring and embedded C software. This section outlines how each major system block was implemented conceptually.
+    </p>
+
+    <h2 id="accelerometer-interface">Accelerometer Interface (I2C)</h2>
+    <p>
+      The accelerometer (MPU-6050) connects to the CC3200 via the I2C bus. The accelerometer is powered by 3.3V, with the SDA and SCL lines connected to the CC3200’s I2C pins. Pull-up resistors are added to SDA and SCL for reliable communication.
+    </p>
+    <p>
+      In software, we initialize the I2C module and configure the accelerometer registers for continuous data output. The CC3200 polls the accelerometer data every game loop iteration, reading the X-axis acceleration to determine left or right spaceship movement.
+    </p>
+
+    <h2 id="ir-remote-control">IR Remote Control (GPIO Interrupt)</h2>
+    <p>
+      The IR receiver (TSOP31130) connects to a GPIO pin configured for falling-edge interrupts. When an IR signal is detected, the interrupt service routine (ISR) is triggered. The ISR uses a timer-based pulse width decoding algorithm to parse the NEC protocol used by the IR remote. Button codes are mapped to specific game functions:
+    </p>
+    <ul>
+      <li><strong>Mute button:</strong> Start game.</li>
+      <li><strong>Any button:</strong> Restart game.</li>
+    </ul>
+
+    <h2 id="oled-display">OLED Display (SPI)</h2>
+    <p>
+      The OLED (Adafruit 1431) is connected via SPI (MOSI, SCK, CS, DC, RST). A 3.3V logic level is used. In software, we use the Adafruit GFX library (adapted for the CC3200) to draw game elements:
+    </p>
+    <ul>
+      <li>The spaceship is represented as a small bitmap image.</li>
+      <li>Asteroids are circles of varying sizes.</li>
+      <li>Score and lives are rendered as text at the top of the screen.</li>
+    </ul>
+    <p>
+      Graphics are updated in a buffered manner to minimize flickering, aiming for 45 FPS.
+    </p>
+
+    <h2 id="aws-iot-integration">AWS IoT Integration (WiFi)</h2>
+    <p>
+      The CC3200 connects to a WiFi network and authenticates to AWS IoT Core using MQTT over TLS. The device uses a unique certificate and private key for secure communication, stored in the CC3200’s flash memory. At game startup, a GET request retrieves the current high score from a pre-defined topic (e.g., <code>asteroidAvoider/highscore</code>). When a new high score is achieved, a POST request updates the topic with the new value.
+    </p>
+
+    <h2 id="game-logic">Game Logic (Software)</h2>
+    <p>
+      The game runs as a finite state machine with four states:
+    </p>
+    <ul>
+      <li><strong>Start Screen:</strong> Displays instructions and current high score.</li>
+      <li><strong>Gameplay:</strong> Polls accelerometer, updates positions, detects collisions, and draws frames.</li>
+      <li><strong>Game Over:</strong> Displays final score; checks if it’s a new high score and uploads to AWS IoT.</li>
+      <li><strong>Restart:</strong> Waits for IR input to return to Start.</li>
+    </ul>
+    <p>
+      Asteroid spawning uses a pseudo-random generator seeded by a hardware timer, creating varying asteroid sizes, speeds, and spawn intervals. Collision detection is implemented using bounding box checks between the spaceship and asteroids.
+    </p>
+
+    <h2 id="circuit-diagram">Circuit Diagram</h2>
+    <figure>
+      <img src="assets/circuitDiagram.png" alt="Illustrates the wiring schematic for the system" style="width:90%; height:auto;">
+      <figcaption>Illustrates the wiring schematic for the system</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/diagram.png" alt="Block diagram of system architecture" style="width:80%; height:auto; margin-top:16px;">
+      <figcaption>Block diagram of the Asteroid Avoider system architecture.</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/fullDiagram.png" alt="Full system wiring diagram" style="width:80%; height:auto; margin-top:16px;">
+      <figcaption>Full system wiring diagram including all major components and connections.</figcaption>
+    </figure>
+
+    <h2 id="summary-of-components">Summary of Major Components</h2>
+    <ul>
+      <li><strong>CC3200 MCU:</strong> Handles all control logic, sensor input, and display output.</li>
+      <li><strong>Accelerometer:</strong> Reads tilt data for spaceship movement via I2C.</li>
+      <li><strong>IR Receiver:</strong> Decodes remote signals via GPIO interrupt.</li>
+      <li><strong>OLED Display:</strong> Renders game graphics via SPI.</li>
+      <li><strong>AWS IoT:</strong> Stores and retrieves high scores via MQTT over WiFi.</li>
+    </ul>
+
+    <h1 id="challenges">Challenges</h1>
+    <p>
+      Merging Lab 3 (IR remote control) and Lab 4 (AWS IoT) into a cohesive system was a major challenge, involving hardware conflicts, debugging, and code integration. We collaborated closely, sought help from friends, and spent additional hours outside class to ensure functionality. Debugging the AWS IoT connection, including JSON formatting and TLS setup, was particularly tricky; we dedicated an entire weekend to this effort, using serial logs and AWS documentation to resolve issues.
+    </p>
+    <p>
+      Additionally, defining clear project goals and organizing our workflow took time. Creating daily to-do lists helped us focus, break down tasks, and track progress effectively.
+    </p>
+
+    <h1 id="future-work">Future Work</h1>
+    <ul>
+      <li>Implementing a global leaderboard via AWS IoT to store and display multiple top scores.</li>
+      <li>Adding sound effects and background music for enhanced gameplay.</li>
+      <li>Optimizing rendering further (e.g., double buffering) to eliminate flickering.</li>
+      <li>Exploring a speaker interface for audio output.</li>
+      <li>Calibrating accelerometer controls for improved responsiveness and user preferences.</li>
+    </ul>
+
+    <h1 id="bill-of-materials">Bill of Materials</h1>
+    <p>No additional components were purchased; all parts were provided by the EEC172 course.</p>
+    <table style="border-collapse:collapse; width:100%;">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Part Name</th>
+          <th>Qty</th>
+          <th>Description</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>CC3200-LAUNCHXL</td>
+          <td>1</td>
+          <td>MCU Evaluation Board. Provided by EEC172 Course. Total: $66.00</td>
+          <td>Control Remote and Devices</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Adafruit 1431 OLED</td>
+          <td>1</td>
+          <td>128x128 RGB OLED Display (SPI). Provided by EEC172 Course. Total: $39.95</td>
+          <td>Display Game Screen</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Vishay TSOP31130 IR RCVR</td>
+          <td>1</td>
+          <td>30kHz carrier frequency. Provided by EEC172 Course. Total: $1.41</td>
+          <td>Decode User Inputs</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>ATT-RC1534801 Remote</td>
+          <td>1</td>
+          <td>General-purpose TV remote (IR NTC). Provided by EEC172 Course. Total: $9.99</td>
+          <td>Allow User Inputs</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>10uF Capacitor</td>
+          <td>1</td>
+          <td>Electrolytic Capacitor 100V. Provided by EEC172 Course. Total: $0.18</td>
+          <td>DC Filtering for IR Receiver</td>
+        </tr>
+        <tr>
+          <td colspan="4" style="text-align:right;"><strong>Grand Total:</strong></td>
+          <td>$117.53</td>
+        </tr>
+      </tbody>
+    </table>
+  </article>
+</body>
+</html>
