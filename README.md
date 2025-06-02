@@ -71,6 +71,9 @@ Asteroid Avoider is a survival game implemented in C for the CC3200 microcontrol
 ### Circuit Connections
 ![Circuit Diagram](./assets/circuitDiagram.png)
 
+### Complete System Diagram
+![Full System Diagram](./assets/fullDiagram.png)
+
 ## 📁 Source Code Structure
 
 ```
@@ -176,6 +179,8 @@ asteroid-avoidance/
                             │   Cloud   │
                             └───────────┘
 ```
+
+![System Architecture](./assets/diagram.png)
 
 ### Finite State Machine
 1. **Start Screen**: Display instructions and current high score
